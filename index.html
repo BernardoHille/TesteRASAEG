@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic Mickey em RA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- componente model-viewer (prévia 3D com a animação) -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    <style>
+        body {
+            font-family: 'Encode Sans', sans-serif;
+            background-color: #1d2333;
+        }
+        .ar-button {
+            background-color: #3f8cff;
+        }
+        .ar-button:hover {
+            filter: brightness(0.9);
+        }
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col items-center justify-center min-h-screen p-6">
+
+    <div class="max-w-md w-full text-center flex flex-col items-center justify-between h-full">
+        <p class="text-lg md:text-xl leading-relaxed mb-4">
+            Veja o Mickey escrever com o pincel mágico no seu ambiente.
+        </p>
+
+        <!-- Prévia 3D: a animação toca em loop (autoplay) -->
+        <div class="w-full aspect-square rounded-lg mb-4 flex items-center justify-center">
+            <model-viewer
+                alt="Mickey escrevendo com o pincel mágico"
+                src="EpicMickey_AR.glb"
+                autoplay
+                shadow-intensity="1"
+                camera-controls
+                camera-orbit="0deg 80deg auto"
+                touch-action="pan-y">
+            </model-viewer>
+        </div>
+
+        <a href="#" class="ar-button text-white font-bold text-xl md:text-2xl py-4 px-8 rounded-2xl w-full transition-all duration-300 mb-4 shadow-lg" onclick="openAR(); return false;">
+            Visualizar em AR
+        </a>
+    </div>
+
+  <script>
+    const MODEL = "EpicMickey_AR.glb";
+    const TITLE = "Epic Mickey";
+
+    function openAR() {
+      const ua = navigator.userAgent || navigator.vendor || window.opera;
+      const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+
+      // Android: Scene Viewer (Google app / Play Services for AR). A animação toca em loop.
+      if (/android/i.test(ua)) {
+        window.location.href =
+          "intent://arvr.google.com/scene-viewer/1.0?file=" + encodeURIComponent(base + MODEL) +
+          "&mode=ar_preferred&title=" + encodeURIComponent(TITLE) +
+          "#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=" +
+          encodeURIComponent(location.href) + ";end;";
+      }
+      // iOS: precisa de uma versão .usdz (ainda não gerada para este modelo)
+      else if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+        alert("A versão para iPhone (USDZ) ainda não está disponível. Use um Android compatível com ARCore.");
+      }
+      else {
+        alert("Este recurso de Realidade Aumentada está disponível apenas em dispositivos móveis compatíveis.");
+      }
+    }
+  </script>
+
+</body>
+</html>
