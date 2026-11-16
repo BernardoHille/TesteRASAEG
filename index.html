@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- componente model-viewer (prévia 3D com a animação) -->
+    <!-- model-viewer: prévia 3D e abertura da RA (Scene Viewer via ARCore, com WebXR de reserva) -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     <style>
         body {
@@ -35,47 +35,79 @@
             Veja o Mickey escrever com o pincel mágico no seu ambiente.
         </p>
 
-        <!-- Prévia 3D: a animação toca em loop (autoplay) -->
         <div class="w-full aspect-square rounded-lg mb-4 flex items-center justify-center">
             <model-viewer
+                id="mv"
                 alt="Mickey escrevendo com o pincel mágico"
                 src="EpicMickey_AR.glb"
                 autoplay
+                ar
+                ar-modes="scene-viewer webxr"
+                ar-placement="floor"
+                ar-scale="auto"
                 shadow-intensity="1"
                 camera-controls
                 camera-orbit="0deg 80deg auto"
                 touch-action="pan-y">
+                <!-- o botão padrão do model-viewer fica escondido; usamos o nosso abaixo -->
+                <button slot="ar-button" style="display:none"></button>
             </model-viewer>
         </div>
 
-        <a href="#" class="ar-button text-white font-bold text-xl md:text-2xl py-4 px-8 rounded-2xl w-full transition-all duration-300 mb-4 shadow-lg" onclick="openAR(); return false;">
+        <a href="#" class="ar-button text-white font-bold text-xl md:text-2xl py-4 px-8 rounded-2xl w-full transition-all duration-300 mb-3 shadow-lg" onclick="openAR(); return false;">
             Visualizar em AR
         </a>
+        <a href="#" class="text-sm underline opacity-70 mb-2" onclick="openSceneViewer(); return false;">
+            Não abriu? Tentar pelo Scene Viewer
+        </a>
+        <p id="msg" class="text-sm opacity-80 min-h-[1.5rem]"></p>
     </div>
 
   <script>
     const MODEL = "EpicMickey_AR.glb";
     const TITLE = "Epic Mickey";
+    const mv = document.getElementById("mv");
+    const msg = document.getElementById("msg");
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    const isAndroid = /android/i.test(ua);
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
+    // Caminho principal: o próprio model-viewer escolhe Scene Viewer (pacote do ARCore) ou WebXR.
     function openAR() {
-      const ua = navigator.userAgent || navigator.vendor || window.opera;
-      const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+      msg.textContent = "";
+      if (isIOS) {
+        msg.textContent = "A versão para iPhone (USDZ) ainda não está disponível. Use um Android compatível com ARCore.";
+        return;
+      }
+      if (!isAndroid) {
+        msg.textContent = "A Realidade Aumentada funciona em celulares Android compatíveis com ARCore.";
+        return;
+      }
+      if (mv.canActivateAR) {
+        mv.activateAR();
+      } else {
+        openSceneViewer();
+      }
+    }
 
-      // Android: Scene Viewer (Google app / Play Services for AR). A animação toca em loop.
-      if (/android/i.test(ua)) {
-        window.location.href =
-          "intent://arvr.google.com/scene-viewer/1.0?file=" + encodeURIComponent(base + MODEL) +
-          "&mode=ar_preferred&title=" + encodeURIComponent(TITLE) +
-          "#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=" +
-          encodeURIComponent(location.href) + ";end;";
+    // Caminho alternativo: intent direto para o Scene Viewer do Google Play Services for AR.
+    function openSceneViewer() {
+      const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+      const params = "file=" + encodeURIComponent(base + MODEL) +
+                     "&mode=ar_preferred&title=" + encodeURIComponent(TITLE);
+      window.location.href =
+        "intent://arvr.google.com/scene-viewer/1.2?" + params +
+        "#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;" +
+        "S.browser_fallback_url=" + encodeURIComponent(location.href.split('#')[0] + "#ar-falhou") + ";end;";
+    }
+
+    mv.addEventListener("ar-status", (e) => {
+      if (e.detail.status === "failed") {
+        msg.textContent = "O celular não conseguiu abrir a RA. Atualize o \"Google Play Services for AR\" na Play Store e tente de novo.";
       }
-      // iOS: precisa de uma versão .usdz (ainda não gerada para este modelo)
-      else if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
-        alert("A versão para iPhone (USDZ) ainda não está disponível. Use um Android compatível com ARCore.");
-      }
-      else {
-        alert("Este recurso de Realidade Aumentada está disponível apenas em dispositivos móveis compatíveis.");
-      }
+    });
+    if (location.hash === "#ar-falhou") {
+      msg.textContent = "O Scene Viewer não abriu. Atualize o \"Google Play Services for AR\" e o app Google na Play Store.";
     }
   </script>
 
