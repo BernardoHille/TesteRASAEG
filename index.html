@@ -8,7 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- model-viewer: prévia 3D e abertura da RA (Scene Viewer via ARCore, com WebXR de reserva) -->
+    <!-- model-viewer: prévia 3D e RA. WebXR (RA dentro do Chrome, via ARCore) vem primeiro porque o
+         Scene Viewer do app Google passou a fechar sozinho em alguns aparelhos (nov/2026). -->
+
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     <style>
         body {
@@ -42,7 +44,7 @@
                 src="EpicMickey_AR.glb"
                 autoplay
                 ar
-                ar-modes="scene-viewer webxr"
+                ar-modes="webxr scene-viewer"
                 ar-placement="floor"
                 ar-scale="auto"
                 shadow-intensity="1"
@@ -72,7 +74,7 @@
     const isAndroid = /android/i.test(ua);
     const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
-    // Caminho principal: o próprio model-viewer escolhe Scene Viewer (pacote do ARCore) ou WebXR.
+    // Caminho principal: o próprio model-viewer abre a RA (WebXR no Chrome; Scene Viewer de reserva).
     function openAR() {
       msg.textContent = "";
       if (isIOS) {
