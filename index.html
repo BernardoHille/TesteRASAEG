@@ -9,8 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&display=swap" rel="stylesheet">
-    <!-- model-viewer: prévia 3D e RA. WebXR (RA dentro do Chrome, via ARCore) vem primeiro porque o
-         Scene Viewer do app Google passou a fechar sozinho em alguns aparelhos (nov/2026). -->
+    <!-- model-viewer: prévia 3D e RA.
+         Android: WebXR (RA dentro do Chrome, via ARCore) vem primeiro porque o Scene Viewer do app Google
+         passou a fechar sozinho em alguns aparelhos (nov/2026).
+         iPhone/iPad: AR Quick Look com o arquivo USDZ (ios-src). -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     <style>
         /* Identidade visual SAEG 2026: gradiente arco-íris granulado + tipografia creme */
@@ -138,9 +140,10 @@
                 id="mv"
                 alt="Mickey escrevendo com o pincel mágico"
                 src="EpicMickey_AR.glb?v=2"
+                ios-src="EpicMickey_AR.usdz?v=2"
                 autoplay
                 ar
-                ar-modes="webxr scene-viewer"
+                ar-modes="webxr scene-viewer quick-look"
                 ar-placement="floor"
                 ar-scale="auto"
                 shadow-intensity="1"
@@ -159,7 +162,7 @@
             </svg>
             Visualizar em AR
         </a>
-        <a href="#" class="alt" onclick="openSceneViewer(); return false;">Não abriu? Tentar pelo Scene Viewer</a>
+        <a href="#" class="alt" id="alt" onclick="openSceneViewer(); return false;">Não abriu? Tentar pelo Scene Viewer</a>
         <p id="msg" role="status"></p>
 
         <footer>
@@ -170,23 +173,31 @@
     </main>
 
   <script>
-    const MODEL = "EpicMickey_AR.glb?v=2";   // troque o v= a cada nova versão do modelo (evita cache do celular)
+    const MODEL = "EpicMickey_AR.glb?v=2";   // troque o v= a cada nova versão do modelo (evita cache do celular),
+                                             // aqui e nos atributos src e ios-src lá em cima
     const TITLE = "SAEG 2026 - Mickey";
     const mv = document.getElementById("mv");
     const msg = document.getElementById("msg");
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     const isAndroid = /android/i.test(ua);
-    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isIOS = (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) ||
+                  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);   // iPad com iPadOS 13+
+    if (isIOS) document.getElementById("alt").style.display = "none";
 
     // Caminho principal: o próprio model-viewer abre a RA (WebXR no Chrome; Scene Viewer de reserva).
     function openAR() {
       msg.textContent = "";
       if (isIOS) {
-        msg.textContent = "A versão para iPhone (USDZ) ainda não está disponível. Use um Android compatível com ARCore.";
+        // AR Quick Look (USDZ). Precisa do Safari (ou outro navegador que suporte Quick Look) e iOS 13+.
+        if (mv.canActivateAR) {
+          mv.activateAR();
+        } else {
+          msg.textContent = "Abra este link no Safari para ver em RA (iPhone ou iPad com iOS 13 ou mais novo).";
+        }
         return;
       }
       if (!isAndroid) {
-        msg.textContent = "A Realidade Aumentada funciona em celulares Android compatíveis com ARCore. Abra este link no celular.";
+        msg.textContent = "A Realidade Aumentada funciona no celular: Android (Chrome) ou iPhone/iPad (Safari). Abra este link no celular.";
         return;
       }
       if (mv.canActivateAR) {
